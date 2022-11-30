@@ -32,6 +32,7 @@ e^{\frac{-d_{ij}^2}{\sigma ^2}} \geq \epsilon \ \text{and} \ i \ != j \\
 0 & \quad \text{otherwise}
 \end{cases}
 $$
+
 where $d_{ij}$ is the distance from sensor i to sensor j, sigma and epsilon are normalization parameters to control the sparsity of the matrix.
 
 We could compare this type of building matrix with a classical 0-1 one.
