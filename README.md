@@ -42,7 +42,8 @@ Possible model's changes:
 - change relu function to LSTM or other Gated Units in the Temporal Layers
 - change the architecture of the model (order and numbers of spatio/temporal/normalization layers)
 - change learning optimization: original use RMSprop, try with ADAM, AdaGrad
+- compare with a standard GCN (i.e., only normalization layers)
 
 # Available datasets
 - PeMSD{district}: we can select how many routes, how many sensors, which time window to include. Standard paper use 228 and 1026 stations (medium and large scale) randomly selected over the 39.000+ total sensor stations. Datas are aggregated into 5-minutes interval (288 data points per day) from 30-seconds data sample. They did experiments on 2012 workdays timeranges. We could make experiments and see how the number of sensor / features of sensors incide on the overall performance and time. (Model: STGCN). 
-- MetrLA.h5: contains an array of shape [34272, 207], where 34272 is total number of time steps, and 207 is number of sensors. 288 data points per day -> data are collected over 4 months (when ?).
+- MetrLA.h5: contains an array of shape [34272, 207], where 34272 is total number of time steps, and 207 is number of sensors. 288 data points per day -> data are collected over 4 months (when: from 03/01/2012 @ 00:00 to 06/26/2017 @ 23:55 => total 119 days including non-working days). We could filter the dataset to include only workdays!
