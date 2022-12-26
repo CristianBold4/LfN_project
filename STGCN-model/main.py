@@ -4,9 +4,13 @@ import numpy as np
 from utils.parser import parse_parameters
 from data_loader.data_loader import *
 from model.model import *
+from utils import early_stopping
+
 import utils.utils as U
 import torch.nn as nn
 import torch.optim as optim
+import random
+
 
 if __name__ == "__main__":
     # Logging
@@ -28,20 +32,10 @@ if __name__ == "__main__":
     # prepare model for training
     model = STGCN_model(args, blocks, n_sensors).to(device)
     # print(blocks)
-    # print(model)
     loss = nn.MSELoss()
-    optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.001)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, 10, 0.95)
+    opt = optim.Adam(model.parameters(), lr=1e-3, weight_decay=5e-4, amsgrad=False)
+    scheduler = optim.lr_scheduler.StepLR(opt, step_size=10, gamma=0.95)
+    es = early_stopping.EarlyStopping(mode='min', min_delta=0.0, patience=args.patience)
 
-    train(loss, args, optimizer, scheduler, model=model, train_iter=train_iter, val_iter=val_iter)
+    train(loss, args, opt, scheduler, model, train_iter, val_iter, es)
     test(scaler, loss, model, test_iter, args)
-
-
-
-
-
-
-
-
-
-

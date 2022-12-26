@@ -4,6 +4,7 @@ import pandas as pd
 import scipy.sparse as sp
 import torch
 import torch.utils.data
+import math
 
 from sklearn import preprocessing
 
@@ -38,7 +39,8 @@ def data_transform(data, M, H, device):
 
 
 def load_data(args, device):
-    W, n_sensors = load_weight_matrix(args.dataset)
+
+    print(f'Loading dataset {args.dataset}...')
     M = args.M
     H = args.H
 
@@ -46,9 +48,9 @@ def load_data(args, device):
     dataset_path = os.path.join(data_folder, args.dataset)
     df = pd.read_csv(os.path.join(dataset_path, 'vel.csv'))
 
-    # train-val-test split using (70, 10, 20)
-    len_train = int(df.shape[0] * 0.7)
-    len_val = int(df.shape[0] * 0.1)
+    # train-val-test split using (70, 15, 15)
+    len_train = int(math.floor(df.shape[0] * 0.7))
+    len_val = int(math.floor(df.shape[0] * 0.15))
     len_test = df.shape[0] - len_train - len_train
 
     train = df[: len_train]

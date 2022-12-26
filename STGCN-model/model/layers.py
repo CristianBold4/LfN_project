@@ -135,7 +135,7 @@ class ChebGraphConv(nn.Module):
         self.bias = nn.Parameter(torch.FloatTensor(out_channels))
 
         # init parameters
-        init.kaiming_normal_(self.weight)
+        init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
         bound = 1/math.sqrt(fan_in) if fan_in > 0 else 0
         init.uniform_(self.bias, -bound, bound)
@@ -184,7 +184,7 @@ class GraphConvLayer(nn.Module):
     def forward(self, x):
         x_gc_in = self.align(x)
         x_gc = self.gc(x_gc_in)
-        x_gc = torch.permute(x_gc, (0, 3, 1, 2))
+        x_gc = x_gc.permute(0, 3, 1, 2)
         output = torch.add(x_gc, x_gc_in)
         return output
 

@@ -64,11 +64,10 @@ def compute_cheby_gso(gso):
     max_eigenvalue = max(eigsh(A=gso, k=6, which='LM', return_eigenvectors=False))
 
     # if the gso is symmetric or rw normalized Laplacian, then the max eigenvalue <= 2
-    if max_eigenvalue <= 2:
+    if max_eigenvalue >= 2:
         gso = gso - I
     else:
         gso = 2 * gso/max_eigenvalue - I
-
 
     return gso
 
