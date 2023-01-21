@@ -164,6 +164,19 @@ class ChebGraphConv(nn.Module):
         cheb_graph_conv = torch.einsum('btkhi,kij->bthj', x, self.weight)
         return torch.add(cheb_graph_conv, self.bias)
 
+        # kernel = self.gso
+        # n = kernel.shape[0]
+        # x_tmp = torch.reshape(torch.transpose(x, [0, 2, 1]), [-1, n])
+        # x_mul = torch.reshape(torch.matmul(x_tmp, kernel), [-1, self.in_channels, self.Ks, n])
+        # x_ker = torch.reshape(torch.transpose(x_mul, [0, 3, 1, 2]), [-1, self.in_channels * self.Ks])
+        # x_conv = torch.reshape(torch.matmul(x_ker, self.weight), [-1, n, self.out_channels])
+        # x_conv = torch.add(x_conv, self.bias)
+        #
+        # _, T, n, _ = x.get_shape().as_list()
+        #
+        # x_gc = torch.reshape(x_conv, [-1, T, n, self.out_channels])
+        # return torch.nn.functional.relu(x_gc[:, :, :, 0:self.out_channels] + x)
+
 
 class GraphConvLayer(nn.Module):
     def __init__(self, gc_type, in_channels, out_channels, Ks, gso):

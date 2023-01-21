@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse as sp
 from scipy.sparse.linalg import eigsh
+from scipy.sparse.linalg import eigs
 import torch
 
 
@@ -70,5 +71,34 @@ def compute_cheby_gso(gso):
         gso = 2 * gso/max_eigenvalue - I
 
     return gso
+
+
+def compute_scaled_laplacian(W):
+    n, d = np.shape(W)[0], np.sum(W, axis=1)
+    L = -W
+    L[np.diag_indices_from(L)] = d
+    for i in range(n):
+        for j in range(n):
+            if (d[i] > 0) and (d[j] > 0):
+                L[i, j] = L[i, j] / np.sqrt(d[i] * d[j])
+
+    lambda_max = eigs(L, k=1, which='LR')[0][0].real
+    return np.mat(2 * L / lambda_max - np.identity(n))
+
+
+def cheb_poly_approximation(L, Ks, n):
+    L0, L1 = np.mat(np.identity(n)), np.mat(np.copy(L))
+
+    if Ks > 1:
+        L_list = [np.copy(L0), np.copy(L1)]
+        for i in range(Ks - 2):
+            Ln = np.mat(2 * L * L1 - L0)
+            L_list.append(np.copy(Ln))
+            L0, L1 = np.matrix(np.copy(L1)), np.matrix(np.copy(Ln))
+        return np.concatenate(L_list, axis=-1)
+    elif Ks == 1:
+        return np.asarray(L0)
+    else:
+        raise ValueError(f'ERROR: the size of the spatial kernel must be >= 1, but received {Ks }')
 
 

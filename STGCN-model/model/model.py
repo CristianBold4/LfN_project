@@ -41,7 +41,7 @@ class STGCN_model(nn.Module):
 
 
 def train(loss, args, opt, scheduler, model, train_iter, val_iter, es):
-    print(loss)
+    min_val_loss = 1
     for epoch in range(args.epochs):
         l_sum, n = 0.0, 0
         model.train()
@@ -56,6 +56,9 @@ def train(loss, args, opt, scheduler, model, train_iter, val_iter, es):
             n += y.shape[0]
         # val_loss = compute_loss(loss, model, val_iter)
         val_loss = val(model, val_iter, loss)
+        if val_loss < min_val_loss:
+            min_val_loss = val_loss
+            torch.save(model.state_dict(), args.savepath)
         # GPU memory usage
         gpu_mem_alloc = torch.cuda.max_memory_allocated() / 1000000
         print('Epoch: {:03d} | lr: {:.20f} | Train loss: {:.6f} | Val loss {:.6f} | GPU occupy: {:.6f} Mib'.\
@@ -114,3 +117,5 @@ def test(scaler, loss, model, test_iter, args):
     test_loss = l_sum / n
 
     print(f'Dataset {args.dataset} | Test Loss {test_loss:.6f} | MAE {MAE:.6f} | MAPE {MAPE:.6f} | RMSE {RMSE:.6f}')
+
+    return test_loss
