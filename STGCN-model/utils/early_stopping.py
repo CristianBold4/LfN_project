@@ -2,7 +2,10 @@ import torch
 
 
 class EarlyStopping(object):
-    def __init__(self, mode='min', min_delta=0, patience=10, percentage=False):
+    """
+    Class to perform early stopping with patience and delta on validation loss
+    """
+    def __init__(self, mode='min', min_delta=0, patience=30, percentage=False):
         self.mode = mode
         self.min_delta = min_delta
         self.patience = patience

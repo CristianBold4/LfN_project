@@ -31,29 +31,11 @@ class Align(nn.Module):
         return x
 
 
-class CausalConv1d(nn.Conv1d):
+class CausalConv2d(nn.Conv2d):
     """
     Causal convolutions are a type of convolution used for temporal data which ensures the model cannot violate the
-    ordering in which we model the data
+    ordering in which we model the data. Performs 2-dimensional Causal Convolution
     """
-
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=False, dilation=1):
-        if padding:
-            self.__padding = (kernel_size - 1) * dilation
-        else:
-            self.__padding = 0
-        super(CausalConv1d, self).__init__(in_channels, out_channels, kernel_size=kernel_size, stride=stride,
-                                           padding=self.__padding, dilation=dilation)
-
-    def forward(self, x):
-        output = super(CausalConv1d, self).forward(x)
-        if self.__padding != 0:
-            return output[:, :, : -self.__padding]
-
-        return output
-
-
-class CausalConv2d(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=False, dilation=1):
         kernel_size = _pair(kernel_size)
         stride = _pair(stride)
@@ -75,6 +57,9 @@ class CausalConv2d(nn.Conv2d):
 
 
 class TemporalConvLayer(nn.Module):
+    """
+    Temporal Convolutional Layer: includes 2 CausalConv2D layers + Sigmoid
+    """
     def __init__(self, Kt, in_channels, out_channels, n):
         super(TemporalConvLayer, self).__init__()
         self.Kt = Kt
@@ -99,32 +84,11 @@ class TemporalConvLayer(nn.Module):
         return output
 
 
-class GraphConv(nn.Module):
-    def __init__(self, in_channels, out_channels, Ks, gso):
-        super(GraphConv, self).__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.Ks = Ks
-        self.gso = gso
-        self.weight = nn.Parameter(torch.FloatTensor(Ks, in_channels, out_channels))
-        self.bias = nn.Parameter(torch.FloatTensor(out_channels))
-
-        # init parameters
-        init.kaiming_normal_(self.weight)
-        fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
-        bound = 1/math.sqrt(fan_in) if fan_in > 0 else 0
-        init.uniform_(self.bias, -bound, bound)
-
-    def forward(self, x):
-        x = torch.permute(x, (0, 2, 3, 1))
-
-        first_mul = torch.einsum('hi,btij->bthj', self.gso, x)
-        second_mul = torch.einsum('bthi,ij->bthj', first_mul, self.weight)
-
-        return torch.add(second_mul, self.bias)
-
-
 class ChebGraphConv(nn.Module):
+    """
+    Spatial Convolution Layer using Chebyshev polynomial approximation. Uses Einstein summation to perform
+    the convolution
+    """
     def __init__(self, in_channels, out_channels, Ks, gso):
         super(ChebGraphConv, self).__init__()
         self.in_channels = in_channels
@@ -134,7 +98,7 @@ class ChebGraphConv(nn.Module):
         self.weight = nn.Parameter(torch.FloatTensor(Ks, in_channels, out_channels))
         self.bias = nn.Parameter(torch.FloatTensor(out_channels))
 
-        # init parameters
+        # -- init parameters
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
         bound = 1/math.sqrt(fan_in) if fan_in > 0 else 0
@@ -179,6 +143,9 @@ class ChebGraphConv(nn.Module):
 
 
 class GraphConvLayer(nn.Module):
+    """
+    Graph Convolution Layer: aligns the channels and includes a Spatial Convolutional Layer
+    """
     def __init__(self, gc_type, in_channels, out_channels, Ks, gso):
         super(GraphConvLayer, self).__init__()
         self.gc_type = gc_type
@@ -189,8 +156,6 @@ class GraphConvLayer(nn.Module):
         self.gso = gso
         if gc_type == 'cheb_graph_conv':
             self.gc = ChebGraphConv(out_channels, out_channels, Ks, gso)
-        elif gc_type == 'graph_conv':
-            self.gc = GraphConv(out_channels, out_channels, Ks, gso)
         else:
             raise ValueError(f'Unidentified graph convolutional type')
 

@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
 from model.layers import STConvBlock, OutputBlock
 import tqdm
 import numpy as np
@@ -8,7 +7,7 @@ import numpy as np
 
 class STGCN_model(nn.Module):
     """
-    Composed by 2 ST blocks + 1 Output block with Chebyshev graph convolution
+    Composed by ST blocks + 1 Output block with Chebyshev graph convolution
     """
 
     def __init__(self, args, blocks, n_sensors):
@@ -41,7 +40,21 @@ class STGCN_model(nn.Module):
 
 
 def train(loss, args, opt, scheduler, model, train_iter, val_iter, es):
+    """
+    Function to train the model and save to args.savepath the best model found
+    :param loss: the loss function
+    :param args: args parameters
+    :param opt: optimizer
+    :param scheduler: scheduler
+    :param model: model to train
+    :param train_iter: preprocessed torch train dataset
+    :param val_iter: preprocessed torch validation dataset
+    :param es: early stopping
+    :return: the minimum validation loss
+    """
     min_val_loss = 1
+    train_losses = []
+    val_losses = []
     for epoch in range(args.epochs):
         l_sum, n = 0.0, 0
         model.train()
@@ -54,13 +67,14 @@ def train(loss, args, opt, scheduler, model, train_iter, val_iter, es):
             scheduler.step()
             l_sum += l.item() * y.shape[0]
             n += y.shape[0]
-        # val_loss = compute_loss(loss, model, val_iter)
         val_loss = val(model, val_iter, loss)
         if val_loss < min_val_loss:
             min_val_loss = val_loss
             torch.save(model.state_dict(), args.savepath)
         # GPU memory usage
         gpu_mem_alloc = torch.cuda.max_memory_allocated() / 1000000
+        train_losses.append(l_sum / n)
+        val_losses.append(val_loss)
         print('Epoch: {:03d} | lr: {:.20f} | Train loss: {:.6f} | Val loss {:.6f} | GPU occupy: {:.6f} Mib'.\
               format(epoch + 1, opt.param_groups[0]['lr'], l_sum / n, val_loss, gpu_mem_alloc))
 
@@ -68,9 +82,28 @@ def train(loss, args, opt, scheduler, model, train_iter, val_iter, es):
             print('Early stopping.')
             break
 
+    # # Train loss plot
+    # epochs = np.arange(epoch + 1).tolist()
+    #
+    # # plt.plot(epochs, train_losses, color="blue", label="Train Loss")
+    # # plt.xlabel("Epochs")
+    # # plt.ylabel("Training Loss")
+    # # plt.title("Training loss plot")
+    # #
+    # # plt.show()
+
+    return min_val_loss
+
 
 @torch.no_grad()
 def val(model, val_iter, loss):
+    """
+    Function to perform validation on the model
+    :param model: the model
+    :param val_iter: torch preprocessed validation dataset
+    :param loss: loss function
+    :return: validation loss
+    """
     model.eval()
     l_sum, n = 0.0, 0
     for x, y in val_iter:
@@ -81,18 +114,16 @@ def val(model, val_iter, loss):
     return torch.tensor(l_sum / n)
 
 
-def compute_loss(loss, model, val_iter):
-    model.eval()
-    l_sum, n = 0.0, 0
-    for x, y in val_iter:
-        y_pred = model(x).view(len(x), -1)
-        l = loss(y_pred, y)
-        l_sum += l.item() * y.shape[0]
-        n += y.shape[0]
-    return l_sum / n
-
-
 def test(scaler, loss, model, test_iter, args):
+    """
+    Function to perform test on the model and compute metrics
+    :param scaler: scaler to rescaler the data
+    :param loss: loss function
+    :param model: the model
+    :param test_iter: preprocessed torch test dataset
+    :param args: args parameters
+    :return: performance metrics MAE, MAPE, WMAPE, RMSE
+    """
     model.eval()
     # compute test loss as MSE
     l_sum, n = 0.0, 0
@@ -113,9 +144,12 @@ def test(scaler, loss, model, test_iter, args):
 
     MAE = np.array(mae).mean()
     RMSE = np.sqrt(np.array(mse).mean())
-    MAPE = np.sum(np.array(mae)) / np.sum(np.array(sum_y)) * 100
+    # -- weighted MAPE
+    WMAPE = np.sum(np.array(mae)) / np.sum(np.array(sum_y)) * 100
+    MAPE = np.array(mape).mean() * 100
     test_loss = l_sum / n
 
-    print(f'Dataset {args.dataset} | Test Loss {test_loss:.6f} | MAE {MAE:.6f} | MAPE {MAPE:.6f} | RMSE {RMSE:.6f}')
+    print(f'Dataset {args.dataset} | Test Loss {test_loss:.6f} | MAE {MAE:.6f} | MAPE {MAPE:.6f} | WMAPE {WMAPE:.6f}'
+          f'| RMSE {RMSE:.6f}')
 
     return test_loss

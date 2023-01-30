@@ -6,6 +6,12 @@ import torch
 
 
 def compute_gso(adj, gso_type):
+    """
+    Function that computes Gram-Schmidt Orthonormalization
+    :param adj: adjacency matrix
+    :param gso_type: the type of gso
+    :return: the gso computed
+    """
     n_sensors = adj.shape[0]
 
     if not sp.issparse(adj):
@@ -56,6 +62,11 @@ def compute_gso(adj, gso_type):
 
 
 def compute_cheby_gso(gso):
+    """
+    Function that computed the approximated normalized gso
+    :param gso: gso
+    :return: normalized gso
+    """
     if not sp.issparse(gso):
         gso = sp.csc_matrix(gso)
     elif gso.format != 'csc':
@@ -64,7 +75,7 @@ def compute_cheby_gso(gso):
     I = sp.identity(gso.shape[0], format='csc')
     max_eigenvalue = max(eigsh(A=gso, k=6, which='LM', return_eigenvectors=False))
 
-    # if the gso is symmetric or rw normalized Laplacian, then the max eigenvalue <= 2
+    # --  if the gso is symmetric or rw normalized Laplacian, then the max eigenvalue <= 2
     if max_eigenvalue >= 2:
         gso = gso - I
     else:
@@ -74,6 +85,11 @@ def compute_cheby_gso(gso):
 
 
 def compute_scaled_laplacian(W):
+    """
+    Function that computed the scaled Laplacian of the weight matrix
+    :param W: weight adj matrix
+    :return: scaled Laplacian
+    """
     n, d = np.shape(W)[0], np.sum(W, axis=1)
     L = -W
     L[np.diag_indices_from(L)] = d
@@ -87,6 +103,13 @@ def compute_scaled_laplacian(W):
 
 
 def cheb_poly_approximation(L, Ks, n):
+    """
+    Function that computes the Chebyshev Polynomial approximation
+    :param L: Laplacian
+    :param Ks: spatial kernel size = order of the polynomial approximation
+    :param n: number of sensors = adj.shape[0]
+    :return: the computed approximation matrix
+    """
     L0, L1 = np.mat(np.identity(n)), np.mat(np.copy(L))
 
     if Ks > 1:

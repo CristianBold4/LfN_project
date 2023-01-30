@@ -12,6 +12,11 @@ data_folder = './datasets'
 
 
 def load_weight_matrix(dataset_name):
+    """
+    Function that loads the weight matrix
+    :param dataset_name: path to dataset
+    :return: weight matrix, number of sensor (= adj.shape[0])
+    """
     dataset_path = os.path.join(data_folder, dataset_name)
     adj = sp.load_npz(os.path.join(dataset_path, 'adj.npz'))
     n = adj.shape[0]
@@ -21,7 +26,14 @@ def load_weight_matrix(dataset_name):
 
 
 def data_transform(data, M, H, device):
-
+    """
+    Function that preprocess data in a suitable way for training, given M, H
+    :param data: respective dataset
+    :param M: M = number of historical slot
+    :param H: H = number of steps to predict
+    :param device: CUDA/CPU device
+    :return: processed X, Y for the respective dataset
+    """
     n_sensors = data.shape[1]
     total_len = len(data)
     window_len = total_len - M - H
@@ -39,7 +51,13 @@ def data_transform(data, M, H, device):
 
 
 def load_data(args, device):
-
+    """
+    Function that loads and preprocesses the data
+    :param args: args parameters
+    :param device: CUDA/GPU device
+    :return: scaler: the scaler used to standardize the data, train iterations
+    validation iterations and test iterations datasets.
+    """
     print(f'Loading dataset {args.dataset}...')
     M = args.M
     H = args.H
@@ -51,7 +69,9 @@ def load_data(args, device):
     # train-val-test split using (70, 15, 15)
     len_train = int(math.floor(df.shape[0] * 0.7))
     len_val = int(math.floor(df.shape[0] * 0.15))
-    len_test = df.shape[0] - len_train - len_train
+    len_test = df.shape[0] - len_train - len_val
+
+    # print(f'{len_train}, {len_val}, {len_test}')
 
     train = df[: len_train]
     val = df[len_train: len_train + len_val]
