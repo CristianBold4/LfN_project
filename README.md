@@ -10,7 +10,7 @@ Collaborators:
 - Makosa Alberto
 - Mosco Simone
 
-# STGCN Model: Traffic forecasting using GCNNs
+# Traffic forecasting using GCNNs
 
 Goal: use historical speed data to predict the speed at a given future time step.
 
@@ -24,7 +24,7 @@ Data model:
 
 Each node represents a sensor station recording the traffic speed. An edge connecting two nodes means these two sensor stations are connected on the road. The geographic diagram representing traffic speed of a region changes over time.
 
-# Proposed model
+# STGCN model
 PyTorch implementation of slightly modified version of the paper *Spatio-Temporal Graph Convolutional Networks:
 A Deep Learning Framework for Traffic Forecasting* (https://arxiv.org/abs/1709.04875)
 
