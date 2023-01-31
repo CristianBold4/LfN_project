@@ -3,7 +3,7 @@
 Repository of LFN course's project a.y. 2022/23
 
 ## Paper
-https://arxiv.org/abs/1709.04875
+https://github.com/CristianBold4/LfN_project/blob/main/LFN_Final_Report.pdf
 
 Collaborators: 
 - Boldrin Cristian
